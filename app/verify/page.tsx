@@ -58,7 +58,7 @@ export default function VerifyPage() {
             </div>
             {credentials.length > 0 && (
               <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 font-medium">
-                ✓ Verified on-chain
+                Verified on-chain
               </span>
             )}
           </div>

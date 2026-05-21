@@ -1,7 +1,7 @@
 "use client";
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { useCcc } from "@ckb-ccc/connector-react";
+import { ccc, useCcc } from "@ckb-ccc/connector-react";
 import { getCredentialType } from "@/lib/indexer";
 import { issueCredential } from "@/lib/transactions";
 import { CredentialType } from "@/lib/types";
@@ -29,10 +29,13 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
 
   useEffect(() => {
     if (!signerInfo?.signer) { setMyAddress(null); setIsOwner(null); return; }
-    signerInfo.signer.getRecommendedAddress().then((addr) => {
+    signerInfo.signer.getRecommendedAddress().then(async (addr) => {
       setMyAddress(addr);
-      // Check ownership once we have both address and cluster
-      if (ct) setIsOwner(ct.issuerAddress === addr);
+      if (ct) {
+        const address = await ccc.Address.fromString(addr, signerInfo.signer.client);
+        const lockHash = address.script.hash();
+        setIsOwner(ct.issuerLockHash === lockHash);
+      }
     }).catch(() => setMyAddress(null));
   }, [signerInfo, ct]);
 
@@ -131,7 +134,7 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
                 <div key={k} className="flex items-center justify-between text-xs bg-slate-50 px-3 py-1.5 rounded-lg">
                   <span className="text-slate-500">{k}: <span className="text-slate-700 font-medium">{v}</span></span>
                   <button type="button" onClick={() => setMetadata((m) => { const n = { ...m }; delete n[k]; return n; })}
-                    className="text-slate-400 hover:text-red-500">×</button>
+                    className="text-slate-400 hover:text-red-500">Remove</button>
                 </div>
               ))}
             </div>
@@ -152,7 +155,7 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
 
         {isOwner === false && (
           <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
-            ⚠️ You are not the owner of this cluster. Issuing will fail unless you own the cluster's lock script.
+            You are not the owner of this cluster. Issuing will fail unless you own the cluster's lock script.
           </div>
         )}
 
@@ -169,7 +172,7 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
           <div className="space-y-2">
             {results.map((r, i) => (
               <div key={i} className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
-                <p className="text-xs text-emerald-700 font-mono truncate mb-1">→ {r.recipient}</p>
+                <p className="text-xs text-emerald-700 font-mono truncate mb-1">To: {r.recipient}</p>
                 <a href={`https://testnet.explorer.nervos.org/transaction/${r.txHash}`}
                   target="_blank" rel="noopener noreferrer"
                   className="text-xs text-emerald-600 underline">View transaction</a>

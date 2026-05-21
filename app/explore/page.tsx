@@ -9,11 +9,13 @@ export default function ExplorePage() {
   const { signerInfo } = useCcc();
   const [types, setTypes] = useState<CredentialType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setError(null);
       try {
         // If connected, fetch own clusters first so they always appear
         const [all, mine] = await Promise.all([
@@ -27,6 +29,7 @@ export default function ExplorePage() {
         setTypes([...mine, ...others]);
       } catch {
         setTypes([]);
+        setError("Failed to load credential types from CKB testnet.");
       } finally {
         setLoading(false);
       }
@@ -57,7 +60,11 @@ export default function ExplorePage() {
           className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-slate-400 placeholder-slate-400" />
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="text-center py-12 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl">
+          <p className="text-sm">{error}</p>
+        </div>
+      ) : loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse">

@@ -12,6 +12,7 @@ export default function CredentialPage({ params }: { params: Promise<{ sporeId: 
   const { open, signerInfo } = useCcc();
   const [credential, setCredential] = useState<Credential | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [myAddress, setMyAddress] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [resultTx, setResultTx] = useState<string | null>(null);
@@ -20,7 +21,11 @@ export default function CredentialPage({ params }: { params: Promise<{ sporeId: 
   const [showTransfer, setShowTransfer] = useState(false);
 
   useEffect(() => {
-    getCredential(decodeURIComponent(sporeId)).then(setCredential).catch(() => {}).finally(() => setLoading(false));
+    setLoadError(null);
+    getCredential(decodeURIComponent(sporeId))
+      .then(setCredential)
+      .catch(() => setLoadError("Failed to load this credential from CKB testnet."))
+      .finally(() => setLoading(false));
   }, [sporeId]);
 
   useEffect(() => {
@@ -28,7 +33,7 @@ export default function CredentialPage({ params }: { params: Promise<{ sporeId: 
     signerInfo.signer.getRecommendedAddress().then(setMyAddress).catch(() => setMyAddress(null));
   }, [signerInfo]);
 
-  if (!loading && !credential) return notFound();
+  if (!loading && !credential && !loadError) return notFound();
 
   const isHolder = myAddress && credential?.holderAddress === myAddress;
 
@@ -63,6 +68,12 @@ export default function CredentialPage({ params }: { params: Promise<{ sporeId: 
         </svg>
         Back
       </Link>
+
+      {loadError && (
+        <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm">
+          {loadError}
+        </div>
+      )}
 
       {resultTx && (
         <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-sm">

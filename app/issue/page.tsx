@@ -38,7 +38,7 @@ export default function IssuePage() {
         <p className="text-xs font-mono text-slate-700 bg-slate-100 px-3 py-2 rounded-lg mb-4 break-all">{result.clusterId}</p>
         <a href={`https://testnet.explorer.nervos.org/transaction/${result.txHash}`}
           target="_blank" rel="noopener noreferrer"
-          className="text-xs text-indigo-600 underline block mb-6">View transaction →</a>
+          className="text-xs text-indigo-600 underline block mb-6">View transaction -&gt;</a>
         <div className="flex gap-3 justify-center">
           <button onClick={() => router.push(`/issue/${result.clusterId}`)}
             className="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-indigo-700">

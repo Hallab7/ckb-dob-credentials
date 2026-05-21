@@ -17,8 +17,8 @@ export default function ClusterPage({ params }: { params: Promise<{ clusterId: s
   const normalizedId = rawId.startsWith("0x") ? rawId : `0x${rawId}`;
 
   useEffect(() => {
-    // Show a "still loading" message after 5 seconds
     const timer = setTimeout(() => setTimedOut(true), 5000);
+    setError(null);
 
     Promise.all([
       getCredentialType(normalizedId),
@@ -27,7 +27,7 @@ export default function ClusterPage({ params }: { params: Promise<{ clusterId: s
       setCt(type);
       setCredentials(creds);
     }).catch(() => {
-      // errors are handled inside getCredentialType — nothing to do here
+      setError("Failed to load this cluster from CKB testnet.");
     }).finally(() => {
       setLoading(false);
       clearTimeout(timer);
@@ -45,7 +45,11 @@ export default function ClusterPage({ params }: { params: Promise<{ clusterId: s
         Back to Explore
       </Link>
 
-      {loading ? (
+      {error ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-amber-700">
+          <p className="text-sm">{error}</p>
+        </div>
+      ) : loading ? (
         <div className="animate-pulse space-y-3">
           <div className="h-8 bg-slate-100 rounded w-1/2" />
           <div className="h-4 bg-slate-100 rounded w-full" />

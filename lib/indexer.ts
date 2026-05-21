@@ -11,13 +11,30 @@ import {
   unpackToRawSporeData,
   unpackToRawClusterData,
 } from "@ckb-ccc/spore/advanced";
-import { Credential, CredentialType, decodeContent } from "./types";
+import {
+  CREDENTIAL_CONTENT_TYPE,
+  Credential,
+  CredentialType,
+  decodeContent,
+  isCredentialContent,
+} from "./types";
 
 function getClient(): ccc.ClientPublicTestnet {
   return new ccc.ClientPublicTestnet();
 }
 
-// ─── Cell parsers ─────────────────────────────────────────────────────────────
+function normalizeHex(value: string): `0x${string}` {
+  return (value.startsWith("0x") ? value : `0x${value}`) as `0x${string}`;
+}
+
+function bytesFromHex(hex: string): Uint8Array | null {
+  const clean = hex.replace(/^0x/, "");
+  if (clean.length % 2 !== 0 || !/^[0-9a-f]*$/i.test(clean)) return null;
+
+  const bytes = clean.match(/.{2}/g);
+  if (!bytes) return new Uint8Array();
+  return Uint8Array.from(bytes.map((b) => parseInt(b, 16)));
+}
 
 function parseClusterCell(
   cell: ccc.Cell,
@@ -35,7 +52,6 @@ function parseClusterCell(
       const raw = cell.outputData;
       if (!raw || raw === "0x") return null;
 
-      // Try v2 first (mutantId field), then fall back to v1
       let decoded: { name: string; description: string };
       try {
         decoded = unpackToRawClusterData(raw, "v2");
@@ -43,7 +59,7 @@ function parseClusterCell(
         try {
           decoded = unpackToRawClusterData(raw, "v1");
         } catch {
-          decoded = unpackToRawClusterData(raw); // auto-detect
+          decoded = unpackToRawClusterData(raw);
         }
       }
       name = decoded.name ?? "Unnamed";
@@ -60,6 +76,7 @@ function parseClusterCell(
       name,
       description,
       issuerAddress,
+      issuerLockHash: cell.cellOutput.lock.hash(),
       txHash: cell.outPoint!.txHash,
       index: Number(cell.outPoint!.index),
     };
@@ -77,21 +94,17 @@ function parseSporeCell(
     if (!raw || raw === "0x") return null;
 
     const { contentType, content, clusterId } = unpackToRawSporeData(raw);
-
-    // Only handle JSON credentials
-    if (!contentType.includes("json")) return null;
+    if (contentType !== CREDENTIAL_CONTENT_TYPE) return null;
 
     const contentBytes =
       typeof content === "string"
-        ? Uint8Array.from(
-            content
-              .replace(/^0x/, "")
-              .match(/.{2}/g)!
-              .map((b) => parseInt(b, 16))
-          )
+        ? bytesFromHex(content)
         : new Uint8Array(content as ArrayBuffer);
+    if (!contentBytes) return null;
 
     const credContent = decodeContent(contentBytes);
+    if (!isCredentialContent(credContent)) return null;
+
     const holderAddress = ccc.Address.fromScript(
       cell.cellOutput.lock,
       getClient()
@@ -109,8 +122,6 @@ function parseSporeCell(
     return null;
   }
 }
-
-// ─── Public queries ───────────────────────────────────────────────────────────
 
 /** All credentials held by a specific address */
 export async function getCredentialsByHolder(
@@ -138,7 +149,7 @@ export async function getCredentialsByType(
 
   for await (const { cell, spore } of findSpores({
     client,
-    clusterId: clusterId as `0x${string}`,
+    clusterId: normalizeHex(clusterId),
   })) {
     const sporeId = spore.cellOutput.type!.args;
     const parsed = parseSporeCell(cell, sporeId);
@@ -153,7 +164,7 @@ export async function getCredential(
   sporeId: string
 ): Promise<Credential | null> {
   const client = getClient();
-  const result = await findSpore(client, sporeId as `0x${string}`);
+  const result = await findSpore(client, normalizeHex(sporeId));
   if (!result) return null;
   return parseSporeCell(result.cell, sporeId);
 }
@@ -183,31 +194,19 @@ export async function getCredentialType(
   clusterId: string
 ): Promise<CredentialType | null> {
   const client = getClient();
-  const id = (clusterId.startsWith("0x") ? clusterId : `0x${clusterId}`) as `0x${string}`;
+  const id = normalizeHex(clusterId);
+  const result = await findCluster(client, id);
+  if (!result) return null;
 
-  try {
-    for await (const { cell, cluster } of findSporeClusters({ client })) {
-      try {
-        const cid = cluster.cellOutput.type!.args;
-        if (cid.toLowerCase() === id.toLowerCase()) {
-          return parseClusterCell(cell, cid) ?? {
-            clusterId: cid,
-            name: "Unknown Cluster",
-            description: "This cluster uses a non-standard encoding.",
-            issuerAddress: ccc.Address.fromScript(cell.cellOutput.lock, client).toString(),
-            txHash: cell.outPoint!.txHash,
-            index: Number(cell.outPoint!.index),
-          };
-        }
-      } catch {
-        // skip this cluster and continue scanning
-      }
-    }
-  } catch {
-    // indexer error
-  }
-
-  return null;
+  return parseClusterCell(result.cell, id) ?? {
+    clusterId: id,
+    name: "Unknown Cluster",
+    description: "This cluster uses a non-standard encoding.",
+    issuerAddress: ccc.Address.fromScript(result.cell.cellOutput.lock, client).toString(),
+    issuerLockHash: result.cell.cellOutput.lock.hash(),
+    txHash: result.cell.outPoint!.txHash,
+    index: Number(result.cell.outPoint!.index),
+  };
 }
 
 /** All credential types on testnet (paginated) */
@@ -218,21 +217,17 @@ export async function getAllCredentialTypes(
   const results: CredentialType[] = [];
   let count = 0;
 
-  try {
-    for await (const { cell, cluster } of findSporeClusters({ client })) {
-      try {
-        const clusterId = cluster.cellOutput.type!.args;
-        const parsed = parseClusterCell(cell, clusterId);
-        if (parsed) {
-          results.push(parsed);
-          if (++count >= limit) break;
-        }
-      } catch {
-        // skip undecoded clusters
+  for await (const { cell, cluster } of findSporeClusters({ client })) {
+    try {
+      const clusterId = cluster.cellOutput.type!.args;
+      const parsed = parseClusterCell(cell, clusterId);
+      if (parsed) {
+        results.push(parsed);
+        if (++count >= limit) break;
       }
+    } catch {
+      // Skip clusters this app cannot decode.
     }
-  } catch {
-    // indexer error — return what we have
   }
 
   return results;

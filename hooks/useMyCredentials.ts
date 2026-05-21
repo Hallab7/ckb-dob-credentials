@@ -12,7 +12,13 @@ export function useMyCredentials() {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    if (!signerInfo?.signer) return;
+    if (!signerInfo?.signer) {
+      setCredentials([]);
+      setCredentialTypes([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

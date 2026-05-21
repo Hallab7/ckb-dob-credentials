@@ -39,7 +39,7 @@ export function CredentialCard({
       <div className="flex items-center justify-between mb-3">
         <Link href={`/credentials/${credential.sporeId}`}
           className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-          View on-chain →
+          View on-chain -&gt;
         </Link>
         <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
           Verified

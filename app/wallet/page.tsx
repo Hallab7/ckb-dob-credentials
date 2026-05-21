@@ -18,6 +18,7 @@ export default function WalletPage() {
   const [tab, setTab] = useState("held");
   const [meltingId, setMeltingId] = useState<string | null>(null);
   const [transferTarget, setTransferTarget] = useState<string | null>(null);
+  const [transferringId, setTransferringId] = useState<string | null>(null);
   const [transferTo, setTransferTo] = useState("");
   const [txError, setTxError] = useState<string | null>(null);
 
@@ -46,11 +47,13 @@ export default function WalletPage() {
   async function handleTransfer(sporeId: string) {
     if (!signerInfo?.signer || !transferTo.trim()) return;
     setTxError(null);
+    setTransferringId(sporeId);
     try {
       await transferCredential(signerInfo.signer, sporeId, transferTo);
       setTransferTarget(null); setTransferTo("");
       refetch();
     } catch (e: any) { setTxError(e?.message ?? "Failed"); }
+    finally { setTransferringId(null); }
   }
 
   return (
@@ -111,7 +114,7 @@ export default function WalletPage() {
         credentials.length === 0 ? (
           <div className="text-center py-16 text-slate-400 bg-white border border-slate-200 rounded-xl">
             <p className="text-sm mb-2">No credentials yet.</p>
-            <Link href="/explore" className="text-indigo-600 text-sm hover:underline">Browse credential types →</Link>
+            <Link href="/explore" className="text-indigo-600 text-sm hover:underline">Browse credential types -&gt;</Link>
           </div>
         ) : (
           <>
@@ -120,8 +123,10 @@ export default function WalletPage() {
                 <input type="text" value={transferTo} onChange={(e) => setTransferTo(e.target.value)}
                   placeholder="Recipient address (ckt1...)"
                   className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-slate-400 font-mono" />
-                <button onClick={() => handleTransfer(transferTarget)}
-                  className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Send</button>
+                <button onClick={() => handleTransfer(transferTarget)} disabled={transferringId === transferTarget}
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+                  {transferringId === transferTarget ? "Sending..." : "Send"}
+                </button>
                 <button onClick={() => { setTransferTarget(null); setTransferTo(""); }}
                   className="px-4 py-2 border border-slate-200 text-slate-500 text-sm rounded-lg">Cancel</button>
               </div>
@@ -140,7 +145,7 @@ export default function WalletPage() {
         credentialTypes.length === 0 ? (
           <div className="text-center py-16 text-slate-400 bg-white border border-slate-200 rounded-xl">
             <p className="text-sm mb-2">No credential types created yet.</p>
-            <Link href="/issue" className="text-indigo-600 text-sm hover:underline">Create one →</Link>
+            <Link href="/issue" className="text-indigo-600 text-sm hover:underline">Create one -&gt;</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

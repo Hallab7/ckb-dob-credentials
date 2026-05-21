@@ -5,7 +5,11 @@ import {
   meltSpore,
   transferSpore,
 } from "@ckb-ccc/spore";
-import { encodeContent, CredentialContent } from "./types";
+import {
+  CREDENTIAL_CONTENT_TYPE,
+  encodeContent,
+  CredentialContent,
+} from "./types";
 
 // CKB testnet max fee rate is 10,000,000 shannons/KB
 // Use 1,000 as a safe rate (1000 shannons per byte = well under the limit)
@@ -50,7 +54,7 @@ export async function issueCredential(
   const { tx, id } = await createSpore({
     signer,
     data: {
-      contentType: "application/json",
+      contentType: CREDENTIAL_CONTENT_TYPE,
       content: encodeContent(content),
       clusterId: clusterId as `0x${string}`,
     },

@@ -10,10 +10,12 @@ export default function Home() {
   const { signerInfo } = useCcc();
   const [types, setTypes] = useState<CredentialType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setError(null);
       try {
         const [all, mine] = await Promise.all([
           getAllCredentialTypes(200),
@@ -24,6 +26,7 @@ export default function Home() {
         setTypes([...mine, ...others].slice(0, 6));
       } catch {
         setTypes([]);
+        setError("Failed to load credential types from CKB testnet.");
       } finally {
         setLoading(false);
       }
@@ -33,7 +36,6 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero */}
       <div className="text-center py-16 mb-12">
         <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4 border border-indigo-200">
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
@@ -58,11 +60,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* How it works */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
         {[
           { step: "1", title: "Create a Credential Type", desc: "Define a credential schema as a Spore Cluster. One cluster per credential type." },
-          { step: "2", title: "Issue to Recipients", desc: "Mint a Spore DOB to any CKB address. The recipient owns the cell — not you." },
+          { step: "2", title: "Issue to Recipients", desc: "Mint a Spore DOB to any CKB address. The recipient owns the cell - not you." },
           { step: "3", title: "Verify On-chain", desc: "Anyone can verify credentials by reading cells directly from the CKB blockchain." },
         ].map((item) => (
           <div key={item.step} className="bg-white border border-slate-200 rounded-xl p-5">
@@ -75,15 +76,18 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Recent credential types */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-semibold text-slate-900">Recent Credential Types</h2>
         <Link href="/explore" className="text-sm text-indigo-600 hover:text-indigo-800">
-          View all →
+          View all -&gt;
         </Link>
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="text-center py-12 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl">
+          <p className="text-sm">{error}</p>
+        </div>
+      ) : loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse">
@@ -98,7 +102,7 @@ export default function Home() {
         <div className="text-center py-12 text-slate-400 bg-white border border-slate-200 rounded-xl">
           <p className="text-sm">No credential types yet.</p>
           <Link href="/issue" className="text-indigo-600 text-sm mt-2 inline-block hover:underline">
-            Create the first one →
+            Create the first one -&gt;
           </Link>
         </div>
       ) : (
