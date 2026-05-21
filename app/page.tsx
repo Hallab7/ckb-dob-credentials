@@ -6,6 +6,12 @@ import { CredentialTypeCard } from "@/components/CredentialTypeCard";
 import { getAllCredentialTypes, getMyCredentialTypes } from "@/lib/indexer";
 import { CredentialType } from "@/lib/types";
 
+const steps = [
+  { step: "01", title: "Define", desc: "Create a Spore Cluster that acts as the credential type and schema anchor." },
+  { step: "02", title: "Issue", desc: "Mint a credential DOB to any CKB address. The recipient owns the cell." },
+  { step: "03", title: "Verify", desc: "Read cells directly from CKB testnet to verify ownership and credential content." },
+];
+
 export default function Home() {
   const { signerInfo } = useCcc();
   const [types, setTypes] = useState<CredentialType[]>([]);
@@ -35,81 +41,97 @@ export default function Home() {
   }, [signerInfo]);
 
   return (
-    <div>
-      <div className="text-center py-16 mb-12">
-        <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4 border border-indigo-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-          Powered by Spore Protocol on CKB
+    <div className="space-y-28 lg:space-y-36">
+      <section className="grid min-h-[calc(100vh-180px)] items-center gap-16 lg:grid-cols-12">
+        <div className="lg:col-span-8">
+          <p className="caption mb-8">Spore credentials on CKB</p>
+          <h1 className="hero-title text-main">
+            Verifiable credentials with on-chain ownership.
+          </h1>
         </div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
-          On-chain Verifiable Credentials
-        </h1>
-        <p className="text-slate-500 text-lg max-w-xl mx-auto mb-8">
-          Issue and hold credentials as Spore DOBs. Each credential is a cell you own,
-          backed by CKB, verifiable by anyone.
-        </p>
-        <div className="flex items-center justify-center gap-3">
-          <Link href="/issue"
-            className="bg-indigo-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-indigo-700">
-            Issue Credentials
-          </Link>
-          <Link href="/verify"
-            className="bg-white text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg border border-slate-300 hover:border-slate-400">
-            Verify an Address
-          </Link>
+        <div className="lg:col-span-4 lg:self-end">
+          <p className="body-copy max-w-xl">
+            CredSpore turns credential types into Spore Clusters and issued credentials
+            into holder-owned DOB cells. Minimal surface, permanent verification.
+          </p>
+          <div className="mt-12 flex flex-col gap-3 sm:flex-row">
+            <Link href="/issue" className="btn btn-primary h-[58px] px-7">
+              Issue Credentials
+            </Link>
+            <Link href="/verify" className="btn btn-secondary h-[58px] px-7">
+              Verify Address
+            </Link>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+      <section className="grid gap-4 border-y border-[color:var(--border)] py-8 md:grid-cols-3">
         {[
-          { step: "1", title: "Create a Credential Type", desc: "Define a credential schema as a Spore Cluster. One cluster per credential type." },
-          { step: "2", title: "Issue to Recipients", desc: "Mint a Spore DOB to any CKB address. The recipient owns the cell - not you." },
-          { step: "3", title: "Verify On-chain", desc: "Anyone can verify credentials by reading cells directly from the CKB blockchain." },
+          { label: "Network", value: "Testnet" },
+          { label: "Protocol", value: "Spore" },
+          { label: "Model", value: "Cell-owned" },
         ].map((item) => (
-          <div key={item.step} className="bg-white border border-slate-200 rounded-xl p-5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold flex items-center justify-center mb-3">
-              {item.step}
-            </div>
-            <h3 className="font-semibold text-slate-900 text-sm mb-1">{item.title}</h3>
-            <p className="text-slate-500 text-xs leading-relaxed">{item.desc}</p>
+          <div key={item.label} className="py-4">
+            <p className="caption mb-3">{item.label}</p>
+            <p className="section-title text-main">{item.value}</p>
           </div>
         ))}
-      </div>
+      </section>
 
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-semibold text-slate-900">Recent Credential Types</h2>
-        <Link href="/explore" className="text-sm text-indigo-600 hover:text-indigo-800">
-          View all -&gt;
-        </Link>
-      </div>
-
-      {error ? (
-        <div className="text-center py-12 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl">
-          <p className="text-sm">{error}</p>
+      <section>
+        <div className="mb-10 grid gap-8 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <p className="caption mb-5">Workflow</p>
+            <h2 className="section-title text-main">A compact issuance system.</h2>
+          </div>
+          <p className="body-copy lg:col-span-5 lg:col-start-8">
+            Every workflow is intentionally direct: define a credential type, issue it
+            to a holder, then verify it from chain state.
+          </p>
         </div>
-      ) : loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 mb-3" />
-              <div className="h-4 bg-slate-100 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-slate-100 rounded w-full mb-1" />
-              <div className="h-3 bg-slate-100 rounded w-2/3" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {steps.map((item) => (
+            <div key={item.step} className="surface p-7">
+              <p className="caption mb-10">{item.step}</p>
+              <h3 className="mb-3 text-2xl font-semibold tracking-[-0.04em] text-main">{item.title}</h3>
+              <p className="text-sm leading-7 text-muted">{item.desc}</p>
             </div>
           ))}
         </div>
-      ) : types.length === 0 ? (
-        <div className="text-center py-12 text-slate-400 bg-white border border-slate-200 rounded-xl">
-          <p className="text-sm">No credential types yet.</p>
-          <Link href="/issue" className="text-indigo-600 text-sm mt-2 inline-block hover:underline">
-            Create the first one -&gt;
+      </section>
+
+      <section>
+        <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <p className="caption mb-5">Recent types</p>
+            <h2 className="section-title text-main">Credential clusters.</h2>
+          </div>
+          <Link href="/explore" className="btn btn-secondary">
+            View all
           </Link>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {types.map((ct) => <CredentialTypeCard key={ct.clusterId} ct={ct} />)}
-        </div>
-      )}
+
+        {error ? (
+          <div className="surface-flat p-8 text-muted">{error}</div>
+        ) : loading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="surface h-56 animate-pulse" />
+            ))}
+          </div>
+        ) : types.length === 0 ? (
+          <div className="surface-flat p-10 text-center">
+            <p className="text-muted">No credential types yet.</p>
+            <Link href="/issue" className="mt-5 inline-flex btn btn-primary">
+              Create the first one
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {types.map((ct) => <CredentialTypeCard key={ct.clusterId} ct={ct} />)}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

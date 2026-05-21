@@ -14,11 +14,11 @@ export function ConnectButton() {
   if (address) {
     return (
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-        <span className="text-sm text-slate-600 font-mono hidden sm:block">
+        <span className="h-2 w-2 rounded-full bg-[color:var(--text)]" />
+        <span className="hidden font-mono text-sm text-muted sm:block">
           {address.slice(0, 8)}...{address.slice(-6)}
         </span>
-        <button onClick={disconnect} className="text-xs text-slate-400 hover:text-slate-700">
+        <button onClick={disconnect} className="btn-quiet">
           Disconnect
         </button>
       </div>
@@ -27,7 +27,7 @@ export function ConnectButton() {
 
   return (
     <button onClick={open}
-      className="text-sm font-medium px-4 py-1.5 rounded-md border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50">
+      className="btn-primary min-h-11 px-5">
       Connect Wallet
     </button>
   );

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectButton } from "./ConnectButton";
+import { ThemeToggle } from "./ThemeToggle";
 
 const links = [
   { href: "/", label: "Home" },
@@ -14,27 +15,30 @@ const links = [
 export function Navbar() {
   const pathname = usePathname();
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[color:var(--bg)]/85 backdrop-blur-xl">
+      <div className="mx-auto flex h-[88px] max-w-[1600px] items-center justify-between px-5 sm:px-8 lg:px-16">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <span className="text-white text-xs font-bold">D</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--border-strong)]">
+            <span className="text-xs font-semibold text-main">C</span>
           </div>
-          <span className="font-semibold text-slate-900 text-sm">DOB Credentials</span>
+          <span className="text-sm font-semibold tracking-[-0.02em] text-main">CredSpore</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden items-center gap-10 md:flex">
           {links.map((l) => (
             <Link key={l.href} href={l.href}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium ${
+              className={`text-sm font-medium ${
                 pathname === l.href
-                  ? "bg-slate-100 text-slate-900"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                  ? "text-main"
+                  : "text-muted hover:text-main"
               }`}>
               {l.label}
             </Link>
           ))}
         </nav>
-        <ConnectButton />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <ConnectButton />
+        </div>
       </div>
     </header>
   );

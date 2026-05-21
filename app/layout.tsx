@@ -4,17 +4,17 @@ import { Providers } from "./providers";
 import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "DOB Credentials",
+  title: "CredSpore",
   description: "Verifiable on-chain credentials powered by Spore Protocol on CKB",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50">
+      <body>
         <Providers>
           <Navbar />
-          <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+          <main className="page-shell">{children}</main>
         </Providers>
       </body>
     </html>

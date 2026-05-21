@@ -72,7 +72,7 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
 
   return (
     <div className="max-w-xl mx-auto">
-      <Link href="/issue" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 mb-6">
+      <Link href="/issue" className="btn-quiet mb-6 inline-flex">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -80,30 +80,31 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
       </Link>
 
       {ct && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 mb-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold flex items-center justify-center shrink-0">
+        <div className="surface mb-8 flex items-center gap-4 p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-strong)]">
             {ct.name.charAt(0)}
           </div>
           <div>
-            <p className="text-sm font-semibold text-indigo-900">{ct.name}</p>
-            <p className="text-xs text-indigo-600">{ct.description}</p>
+            <p className="text-sm font-semibold text-main">{ct.name}</p>
+            <p className="text-xs text-muted">{ct.description}</p>
           </div>
         </div>
       )}
 
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900 mb-1">Issue Credential</h1>
-        <p className="text-sm text-slate-500">Mint a credential DOB to a recipient's address.</p>
+        <p className="caption mb-5">Issue</p>
+        <h1 className="section-title mb-4 text-main">Issue credential.</h1>
+        <p className="body-copy">Mint a credential DOB to a recipient address.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="surface space-y-6 p-7">
         <Field label="Recipient Address">
           <div className="relative">
             <input type="text" value={form.recipient} onChange={(e) => set("recipient", e.target.value)}
               placeholder="ckt1..." className="input pr-24 font-mono text-xs" required />
             {myAddress && (
               <button type="button" onClick={() => set("recipient", myAddress)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200">
+                className="btn btn-secondary absolute right-2 top-1/2 min-h-8 -translate-y-1/2 px-3 text-xs">
                 Use mine
               </button>
             )}
@@ -127,14 +128,14 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
 
         {/* Metadata */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Metadata (optional)</label>
+          <label className="caption mb-2 block">Metadata (optional)</label>
           {Object.entries(metadata).length > 0 && (
             <div className="mb-2 space-y-1">
               {Object.entries(metadata).map(([k, v]) => (
-                <div key={k} className="flex items-center justify-between text-xs bg-slate-50 px-3 py-1.5 rounded-lg">
-                  <span className="text-slate-500">{k}: <span className="text-slate-700 font-medium">{v}</span></span>
+                <div key={k} className="surface-flat flex items-center justify-between px-3 py-2 text-xs">
+                  <span className="text-muted">{k}: <span className="font-medium text-main">{v}</span></span>
                   <button type="button" onClick={() => setMetadata((m) => { const n = { ...m }; delete n[k]; return n; })}
-                    className="text-slate-400 hover:text-red-500">Remove</button>
+                    className="text-subtle hover:text-main">Remove</button>
                 </div>
               ))}
             </div>
@@ -145,22 +146,22 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
             <input type="text" value={form.metaValue} onChange={(e) => set("metaValue", e.target.value)}
               placeholder="Value" className="input flex-1" />
             <button type="button" onClick={addMeta}
-              className="px-3 py-2 text-sm border border-slate-200 rounded-lg text-slate-600 hover:border-slate-300 shrink-0">
+              className="btn btn-secondary shrink-0">
               Add
             </button>
           </div>
         </div>
 
-        {error && <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">{error}</div>}
+        {error && <div className="surface-flat p-4 text-sm text-muted">{error}</div>}
 
         {isOwner === false && (
-          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
+          <div className="surface-flat p-4 text-sm text-muted">
             You are not the owner of this cluster. Issuing will fail unless you own the cluster's lock script.
           </div>
         )}
 
         <button type="submit" disabled={!form.recipient.trim() || submitting}
-          className="w-full bg-indigo-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed">
+          className="btn btn-primary w-full disabled:cursor-not-allowed disabled:opacity-40">
           {submitting ? "Issuing..." : !signerInfo?.signer ? "Connect Wallet" : "Issue Credential"}
         </button>
       </form>
@@ -168,25 +169,20 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
       {/* Issued results */}
       {results.length > 0 && (
         <div className="mt-6">
-          <h2 className="font-semibold text-slate-900 mb-3">Issued ({results.length})</h2>
+          <h2 className="mb-3 text-2xl font-semibold tracking-[-0.04em] text-main">Issued ({results.length})</h2>
           <div className="space-y-2">
             {results.map((r, i) => (
-              <div key={i} className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
-                <p className="text-xs text-emerald-700 font-mono truncate mb-1">To: {r.recipient}</p>
+              <div key={i} className="surface-flat px-4 py-3">
+                <p className="mb-1 truncate font-mono text-xs text-muted">To: {r.recipient}</p>
                 <a href={`https://testnet.explorer.nervos.org/transaction/${r.txHash}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-emerald-600 underline">View transaction</a>
+                  className="text-xs font-medium text-main underline">View transaction</a>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <style jsx>{`
-        .input { width: 100%; padding: 0.5rem 0.75rem; font-size: 0.875rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; background: white; outline: none; color: #0f172a; }
-        .input:focus { border-color: #94a3b8; }
-        .input::placeholder { color: #94a3b8; }
-      `}</style>
     </div>
   );
 }
@@ -194,7 +190,7 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <label className="caption mb-2 block">{label}</label>
       {children}
     </div>
   );

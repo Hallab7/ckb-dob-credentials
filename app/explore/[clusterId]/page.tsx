@@ -37,96 +37,76 @@ export default function ClusterPage({ params }: { params: Promise<{ clusterId: s
   }, [normalizedId]);
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Link href="/explore" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 mb-6">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to Explore
-      </Link>
+    <div className="editorial-shell space-y-8">
+      <Link href="/explore" className="btn-quiet inline-flex">Back to Explore</Link>
 
       {error ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-amber-700">
-          <p className="text-sm">{error}</p>
-        </div>
+        <div className="surface-flat p-6 text-muted">{error}</div>
       ) : loading ? (
-        <div className="animate-pulse space-y-3">
-          <div className="h-8 bg-slate-100 rounded w-1/2" />
-          <div className="h-4 bg-slate-100 rounded w-full" />
-          <div className="h-4 bg-slate-100 rounded w-3/4" />
-          {timedOut && (
-            <p className="text-xs text-slate-400 pt-2">
-              Still scanning the chain for this cluster... this can take up to 30 seconds.
-            </p>
-          )}
+        <div className="surface h-56 animate-pulse p-6">
+          {timedOut && <p className="text-sm text-muted">Still scanning the chain for this cluster...</p>}
         </div>
       ) : !ct ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">Spore Cluster</h1>
-          <p className="text-sm text-slate-500 mb-3">
-            This cluster exists on-chain but uses a non-standard encoding (e.g. DOB/1 generative art).
-            You can still issue credentials against it if you own it.
+        <div className="surface p-8">
+          <p className="caption mb-5">Spore Cluster</p>
+          <h1 className="section-title mb-5 text-main">Non-standard cluster.</h1>
+          <p className="body-copy mb-6">
+            This cluster exists on-chain but uses a non-standard encoding. You can still issue credentials against it if you own it.
           </p>
-          <p className="text-xs text-slate-400 mb-1">Cluster ID</p>
-          <p className="text-xs font-mono text-slate-700 bg-slate-50 px-3 py-2 rounded-lg mb-4 break-all">
-            {normalizedId}
-          </p>
-          <div className="flex gap-2">
-            <Link href={`/issue/${normalizedId}`}
-              className="text-sm font-medium px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-              Issue Credential
-            </Link>
-          </div>
+          <p className="caption mb-2">Cluster ID</p>
+          <p className="mb-6 break-all font-mono text-xs text-muted">{normalizedId}</p>
+          <Link href={`/issue/${normalizedId}`} className="btn btn-primary">Issue Credential</Link>
         </div>
       ) : (
         <>
-          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                <span className="text-indigo-600 text-xl font-bold">{ct.name.charAt(0)}</span>
+          <section className="surface p-8">
+            <div className="mb-8 flex items-start gap-5">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-strong)]">
+                <span className="text-2xl font-semibold text-main">{ct.name.charAt(0)}</span>
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-slate-900 mb-1">{ct.name}</h1>
-                <p className="text-slate-500 text-sm">{ct.description}</p>
+                <p className="caption mb-3">Cluster</p>
+                <h1 className="section-title text-main">{ct.name}</h1>
+                <p className="body-copy mt-4">{ct.description}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Issuer</p>
-                <p className="text-xs font-mono text-slate-700 truncate">{ct.issuerAddress}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Cluster ID</p>
-                <p className="text-xs font-mono text-slate-700 truncate">{ct.clusterId}</p>
-              </div>
+            <div className="grid gap-5 border-t border-[color:var(--border)] pt-6 md:grid-cols-2">
+              <Info label="Issuer" value={ct.issuerAddress} />
+              <Info label="Cluster ID" value={ct.clusterId} />
             </div>
-            <div className="mt-4 flex gap-2">
-              <Link href={`/issue/${ct.clusterId}`}
-                className="text-sm font-medium px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                Issue Credential
-              </Link>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href={`/issue/${ct.clusterId}`} className="btn btn-primary">Issue Credential</Link>
               <a href={`https://testnet.explorer.nervos.org/transaction/${ct.txHash}`}
-                target="_blank" rel="noopener noreferrer"
-                className="text-sm font-medium px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:border-slate-300">
+                target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
                 View on Explorer
               </a>
             </div>
-          </div>
+          </section>
 
-          <h2 className="font-semibold text-slate-900 mb-4">
-            Issued Credentials <span className="text-slate-400 font-normal">({credentials.length})</span>
-          </h2>
-          {credentials.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 bg-white border border-slate-200 rounded-xl">
-              <p className="text-sm">No credentials issued yet.</p>
+          <section>
+            <div className="mb-5 flex items-end justify-between border-b border-[color:var(--border)] pb-5">
+              <h2 className="text-2xl font-semibold tracking-[-0.04em] text-main">Issued Credentials</h2>
+              <span className="caption">{credentials.length}</span>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {credentials.map((c) => <CredentialCard key={c.sporeId} credential={c} />)}
-            </div>
-          )}
+            {credentials.length === 0 ? (
+              <div className="surface-flat py-14 text-center text-muted">No credentials issued yet.</div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {credentials.map((c) => <CredentialCard key={c.sporeId} credential={c} />)}
+              </div>
+            )}
+          </section>
         </>
       )}
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="caption mb-2">{label}</p>
+      <p className="truncate font-mono text-xs text-muted">{value}</p>
     </div>
   );
 }
