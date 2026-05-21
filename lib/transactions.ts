@@ -55,7 +55,7 @@ export async function issueCredential(
       clusterId: clusterId as `0x${string}`,
     },
     to: recipientAddr.script,
-    clusterMode: "lockProxy",
+    clusterMode: "clusterCell",
   });
 
   await completeFee(tx, signer);

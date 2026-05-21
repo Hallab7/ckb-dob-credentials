@@ -13,6 +13,7 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
   const { open, signerInfo } = useCcc();
   const [ct, setCt] = useState<CredentialType | null>(null);
   const [myAddress, setMyAddress] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState<boolean | null>(null); // null = unknown
   const [form, setForm] = useState({
     recipient: "", issuedAt: new Date().toISOString().split("T")[0],
     issuer: "", description: "", metaKey: "", metaValue: "",
@@ -27,9 +28,13 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
   }, [clusterId]);
 
   useEffect(() => {
-    if (!signerInfo?.signer) { setMyAddress(null); return; }
-    signerInfo.signer.getRecommendedAddress().then(setMyAddress).catch(() => setMyAddress(null));
-  }, [signerInfo]);
+    if (!signerInfo?.signer) { setMyAddress(null); setIsOwner(null); return; }
+    signerInfo.signer.getRecommendedAddress().then((addr) => {
+      setMyAddress(addr);
+      // Check ownership once we have both address and cluster
+      if (ct) setIsOwner(ct.issuerAddress === addr);
+    }).catch(() => setMyAddress(null));
+  }, [signerInfo, ct]);
 
   function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
 
@@ -144,6 +149,12 @@ export default function IssueCredentialPage({ params }: { params: Promise<{ clus
         </div>
 
         {error && <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">{error}</div>}
+
+        {isOwner === false && (
+          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
+            ⚠️ You are not the owner of this cluster. Issuing will fail unless you own the cluster's lock script.
+          </div>
+        )}
 
         <button type="submit" disabled={!form.recipient.trim() || submitting}
           className="w-full bg-indigo-600 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed">

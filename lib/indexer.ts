@@ -21,13 +21,35 @@ function getClient(): ccc.ClientPublicTestnet {
 
 function parseClusterCell(
   cell: ccc.Cell,
-  clusterId: string
+  clusterId: string,
+  decodedData?: { name: string; description: string }
 ): CredentialType | null {
   try {
-    const raw = cell.outputData;
-    if (!raw || raw === "0x") return null;
+    let name: string;
+    let description: string;
 
-    const { name, description } = unpackToRawClusterData(raw);
+    if (decodedData) {
+      name = decodedData.name ?? "Unnamed";
+      description = decodedData.description ?? "";
+    } else {
+      const raw = cell.outputData;
+      if (!raw || raw === "0x") return null;
+
+      // Try v2 first (mutantId field), then fall back to v1
+      let decoded: { name: string; description: string };
+      try {
+        decoded = unpackToRawClusterData(raw, "v2");
+      } catch {
+        try {
+          decoded = unpackToRawClusterData(raw, "v1");
+        } catch {
+          decoded = unpackToRawClusterData(raw); // auto-detect
+        }
+      }
+      name = decoded.name ?? "Unnamed";
+      description = decoded.description ?? "";
+    }
+
     const issuerAddress = ccc.Address.fromScript(
       cell.cellOutput.lock,
       getClient()
@@ -161,28 +183,56 @@ export async function getCredentialType(
   clusterId: string
 ): Promise<CredentialType | null> {
   const client = getClient();
-  // Ensure 0x prefix
-  const id = clusterId.startsWith("0x") ? clusterId : `0x${clusterId}`;
-  const result = await findCluster(client, id as `0x${string}`);
-  if (!result) return null;
-  return parseClusterCell(result.cell, id);
+  const id = (clusterId.startsWith("0x") ? clusterId : `0x${clusterId}`) as `0x${string}`;
+
+  try {
+    for await (const { cell, cluster } of findSporeClusters({ client })) {
+      try {
+        const cid = cluster.cellOutput.type!.args;
+        if (cid.toLowerCase() === id.toLowerCase()) {
+          return parseClusterCell(cell, cid) ?? {
+            clusterId: cid,
+            name: "Unknown Cluster",
+            description: "This cluster uses a non-standard encoding.",
+            issuerAddress: ccc.Address.fromScript(cell.cellOutput.lock, client).toString(),
+            txHash: cell.outPoint!.txHash,
+            index: Number(cell.outPoint!.index),
+          };
+        }
+      } catch {
+        // skip this cluster and continue scanning
+      }
+    }
+  } catch {
+    // indexer error
+  }
+
+  return null;
 }
 
 /** All credential types on testnet (paginated) */
 export async function getAllCredentialTypes(
-  limit = 50
+  limit = 200
 ): Promise<CredentialType[]> {
   const client = getClient();
   const results: CredentialType[] = [];
   let count = 0;
 
-  for await (const { cell, cluster } of findSporeClusters({ client })) {
-    const clusterId = cluster.cellOutput.type!.args;
-    const parsed = parseClusterCell(cell, clusterId);
-    if (parsed) {
-      results.push(parsed);
-      if (++count >= limit) break;
+  try {
+    for await (const { cell, cluster } of findSporeClusters({ client })) {
+      try {
+        const clusterId = cluster.cellOutput.type!.args;
+        const parsed = parseClusterCell(cell, clusterId);
+        if (parsed) {
+          results.push(parsed);
+          if (++count >= limit) break;
+        }
+      } catch {
+        // skip undecoded clusters
+      }
     }
+  } catch {
+    // indexer error — return what we have
   }
 
   return results;

@@ -1,17 +1,35 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useCcc } from "@ckb-ccc/connector-react";
 import { CredentialTypeCard } from "@/components/CredentialTypeCard";
-import { getAllCredentialTypes } from "@/lib/indexer";
+import { getAllCredentialTypes, getMyCredentialTypes } from "@/lib/indexer";
 import { CredentialType } from "@/lib/types";
 
 export default function Home() {
+  const { signerInfo } = useCcc();
   const [types, setTypes] = useState<CredentialType[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAllCredentialTypes(6).then(setTypes).catch(() => setTypes([])).finally(() => setLoading(false));
-  }, []);
+    async function load() {
+      setLoading(true);
+      try {
+        const [all, mine] = await Promise.all([
+          getAllCredentialTypes(200),
+          signerInfo?.signer ? getMyCredentialTypes(signerInfo.signer) : Promise.resolve([]),
+        ]);
+        const myIds = new Set(mine.map((c) => c.clusterId.toLowerCase()));
+        const others = all.filter((c) => !myIds.has(c.clusterId.toLowerCase()));
+        setTypes([...mine, ...others].slice(0, 6));
+      } catch {
+        setTypes([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [signerInfo]);
 
   return (
     <div>

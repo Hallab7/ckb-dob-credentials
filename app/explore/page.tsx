@@ -1,17 +1,38 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useCcc } from "@ckb-ccc/connector-react";
 import { CredentialTypeCard } from "@/components/CredentialTypeCard";
-import { getAllCredentialTypes } from "@/lib/indexer";
+import { getAllCredentialTypes, getMyCredentialTypes } from "@/lib/indexer";
 import { CredentialType } from "@/lib/types";
 
 export default function ExplorePage() {
+  const { signerInfo } = useCcc();
   const [types, setTypes] = useState<CredentialType[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    getAllCredentialTypes(100).then(setTypes).catch(() => setTypes([])).finally(() => setLoading(false));
-  }, []);
+    async function load() {
+      setLoading(true);
+      try {
+        // If connected, fetch own clusters first so they always appear
+        const [all, mine] = await Promise.all([
+          getAllCredentialTypes(200),
+          signerInfo?.signer ? getMyCredentialTypes(signerInfo.signer) : Promise.resolve([]),
+        ]);
+
+        // Merge: own clusters first, then the rest (deduped)
+        const myIds = new Set(mine.map((c) => c.clusterId.toLowerCase()));
+        const others = all.filter((c) => !myIds.has(c.clusterId.toLowerCase()));
+        setTypes([...mine, ...others]);
+      } catch {
+        setTypes([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [signerInfo]);
 
   const filtered = types.filter(
     (t) =>
@@ -24,7 +45,7 @@ export default function ExplorePage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-slate-900 mb-1">Explore Credential Types</h1>
-        <p className="text-slate-500 text-sm">Browse all credential schemas issued on CKB testnet.</p>
+        <p className="text-slate-500 text-sm">Browse all credential schemas on CKB testnet. Your clusters appear first when connected.</p>
       </div>
 
       <div className="relative mb-6">
@@ -48,7 +69,7 @@ export default function ExplorePage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
-          <p className="text-sm">{search ? "No results found." : "No credential types on-chain yet."}</p>
+          <p className="text-sm">{search ? "No results found." : "No credential types found."}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
