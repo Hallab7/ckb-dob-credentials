@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CredSpore — DOB Credential Protocol
+
+On-chain verifiable credentials powered by [Spore Protocol](https://docs.spore.pro) on Nervos CKB. Issue credentials as Spore DOBs — each one is a cell owned by the holder, backed by locked CKB, and verifiable by anyone reading the chain.
+
+Live at [credspore.vercel.app](https://credspore.vercel.app)
+
+## How It Works
+
+```
+Issuer creates a Cluster (defines the credential type/schema)
+    ↓
+Issuer mints a Spore DOB to recipient's address (the credential)
+    ↓
+Recipient owns the cell — not the issuer, not the platform
+    ↓
+Anyone can verify by reading the cell on-chain
+    ↓
+Holder can melt the DOB to reclaim the locked CKB
+```
+
+No custom scripts. No backend. The Spore Protocol handles ownership, immutability, and melt-to-reclaim. CKB cells are the database.
+
+## Cell Structure
+
+### Credential Type (Spore Cluster)
+
+```
+Cluster Cell:
+  data:   name + description (molecule-encoded)
+  type:   CLUSTER_TYPE_DATA_HASH, args: CLUSTER_ID
+  lock:   <issuer's lock>
+```
+
+### Credential (Spore DOB)
+
+```
+Spore Cell:
+  data:
+    content-type: "application/json"
+    content: { name, issuedAt, issuer, description?, metadata? }
+    cluster_id: CLUSTER_ID
+  type:   SPORE_TYPE_DATA_HASH, args: SPORE_ID
+  lock:   <recipient's lock>
+```
+
+## Project Structure
+
+```
+frontend/
+  app/
+    page.tsx                    # Home — recent credential types
+    explore/                    # Browse all clusters
+    explore/[clusterId]/        # Cluster detail + issued credentials
+    credentials/[sporeId]/      # Credential detail + melt/transfer
+    issue/                      # Create credential type
+    issue/[clusterId]/          # Mint credentials to recipients
+    wallet/                     # My credentials + my types
+    verify/                     # Public verifier by address
+  components/
+    CredentialCard.tsx
+    CredentialTypeCard.tsx
+    Navbar.tsx
+    ConnectButton.tsx
+  lib/
+    transactions.ts             # createCredentialType, issueCredential, melt, transfer
+    indexer.ts                  # findSpores, findSporeClusters queries
+    types.ts                    # Types + JSON codec
+  hooks/
+    useMyCredentials.ts
+```
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cd frontend
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. Connect a CKB testnet wallet (JoyID, MetaMask, OKX).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Issue a Credential
 
-## Learn More
+1. Go to `/issue` and create a credential type (Cluster)
+2. After creation, click "Issue Credentials Now"
+3. Fill in recipient address, date, issuer name, and optional metadata
+4. Approve the transaction — the credential is minted to the recipient
 
-To learn more about Next.js, take a look at the following resources:
+### Verify a Credential
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Go to `/verify`, paste any CKB address, and see all credentials it holds. No wallet needed.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Melt a Credential
 
-## Deploy on Vercel
+Go to `/wallet`, click "Melt" on any credential you hold. The locked CKB is returned to you and the credential is destroyed.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Layer | Technology |
+|-------|-----------|
+| DOB protocol | Spore Protocol (pre-deployed on testnet/mainnet) |
+| CKB SDK | `@ckb-ccc/connector-react` + `@ckb-ccc/spore` |
+| Frontend | Next.js 16 + TypeScript |
+| Wallet | JoyID, MetaMask, OKX (via CCC) |
+| Styling | Tailwind CSS |
+| Network | CKB Testnet |
+
+## Notes
+
+- Only issue credentials against clusters you created — the `clusterCell` mode requires the issuer to sign
+- MetaMask requires explicit `completeFeeBy(signer, 1000)` after the Spore SDK builds the transaction
+- Clusters from other developers on testnet (DOB/1 generative art) show a graceful fallback on the detail page
+
+## License
+
+MIT
